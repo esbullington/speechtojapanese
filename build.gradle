@@ -1,0 +1,28 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.0.0'
+
+        // NOTE: Do not place your application dependencies here: they belong
+        // in the individual module build.gradle files
+    }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 'android-22'
+    buildToolsVersion '22.0.1'
+
+    buildTypes {
+        release {
+	    minifyEnabled true
+            proguardFile getDefaultProguardFile('proguard-android.txt')
+        }
+         debug {
+            debuggable true
+        }
+    }
+}
