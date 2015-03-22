@@ -9,6 +9,10 @@ build:
 release:
 	$(APP_DIRECTORY)/gradlew assembleRelease
 
+restart:
+	adb shell am force-stop com.ericbullington.speechtojapanese
+	adb shell am start -n com.ericbullington.speechtojapanese/com.ericbullington.speechtojapanese.MainActivity
+
 run:
 	adb shell am start -n com.ericbullington.speechtojapanese/com.ericbullington.speechtojapanese.MainActivity
 

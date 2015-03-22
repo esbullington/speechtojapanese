@@ -172,16 +172,15 @@ public class MainActivity extends Activity {
                 0));
         setContentView(ll);
 
-        new PostSample(mContext).execute("http://google.com");
-
         PropertyReader pReader = new PropertyReader(mContext);
         p = pReader.getProperties("credentials.properties");
-        Toast.makeText(mContext, p.getProperty("username"), 1).show();
+        Toast.makeText(mContext, p.getProperty("username"), Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        new PostSample(mContext).execute(mFileName);
         if (mRecorder != null) {
             mRecorder.release();
             mRecorder = null;

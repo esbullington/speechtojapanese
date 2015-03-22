@@ -8,6 +8,10 @@
 # Java class files
 *.class
 
+# Idea settings
+.idea
+*.iml
+
 # Generated files
 bin/
 gen/
