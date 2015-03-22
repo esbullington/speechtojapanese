@@ -22,10 +22,12 @@ import android.content.Context;
 import android.util.Log;
 import android.media.MediaRecorder;
 import android.media.MediaPlayer;
+import android.widget.Toast;
+import android.os.AsyncTask;
 
 import java.io.IOException;
-import android.os.AsyncTask;
 import java.io.File;
+import java.util.Properties;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
@@ -36,6 +38,7 @@ public class MainActivity extends Activity
     private static final String LOG_TAG = "AudioRecordTest";
     private static String mFileName = null;
     private static Context mContext;
+    private Properties p;
 
     private RecordButton mRecordButton = null;
     private MediaRecorder mRecorder = null;
@@ -168,6 +171,10 @@ public class MainActivity extends Activity
         setContentView(ll);
 
         new RequestTask().execute("http://google.com");
+
+        PropertyReader pReader = new PropertyReader(mContext);
+        p = pReader.getProperties("credentials.properties");
+        Toast.makeText(mContext, p.getProperty("username"), 1).show();
     }
 
     @Override
