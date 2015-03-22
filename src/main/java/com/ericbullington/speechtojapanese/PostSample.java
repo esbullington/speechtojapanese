@@ -1,20 +1,44 @@
 package com.ericbullington.speechtojapanese;
 
+import android.util.Base64;
 import android.util.Log;
+
 import android.os.AsyncTask;
 import android.content.Context;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.System;
 import java.lang.StringBuilder;
+import java.net.Authenticator;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Properties;
+import java.net.Proxy;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
+import com.github.kevinsawicki.http.HttpRequest.ConnectionFactory;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class PostSample extends AsyncTask<String, Long, String> {
 
+    private static int BUFSIZE = 1024;
+    private static String TAG = "MyApp";
     private Context context;
     private Properties p;
 
@@ -22,29 +46,116 @@ public class PostSample extends AsyncTask<String, Long, String> {
         this.context = context;
     }
 
+    private String readInputStreamToString(HttpURLConnection connection) {
+        String result = null;
+        StringBuffer sb = new StringBuffer();
+        InputStream is = null;
+
+        try {
+            is = new BufferedInputStream(connection.getInputStream());
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String inputLine = "";
+            while ((inputLine = br.readLine()) != null) {
+                sb.append(inputLine);
+            }
+            result = sb.toString();
+        }
+        catch (Exception e) {
+            Log.d(TAG, "Error reading InputStream");
+            result = null;
+        }
+        finally {
+            if (is != null) {
+                try {
+                    is.close();
+                }
+                catch (IOException e) {
+                    Log.d(TAG, "Error closing InputStream");
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private void writeStream(InputStream inputstream, OutputStream outputstream)
+            throws IOException
+    {
+        byte abyte0[] = new byte[1024];
+        int i;
+        while((i = inputstream.read(abyte0)) >= 0)
+            outputstream.write(abyte0, 0, i);
+        inputstream.close();
+        outputstream.close();
+    }
+
     protected String doInBackground(String... params) {
+
+        Log.d("MyApp", "Requesting speech-to-text...");
+
         try {
 
             PropertyReader pReader = new PropertyReader(this.context);
             p = pReader.getProperties("credentials.properties");
 
+
             String s = String.format("%s/v1/recognize", p.getProperty("url"));
 
             File f = new File(params[0]);
 
-            /* HttpRequest request =  HttpRequest.get("http://speechtojapanese.mybluemix.net/") */
-            HttpRequest request =  HttpRequest.post(s)
-                .accept("application/json")
-                .trustAllCerts() //Temporarily accept all certificates
-                .basic(p.getProperty("username"), p.getProperty("password"));
+            URL url = new URL(s);
+            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 
-            request.part("form[body]", "Making a multipart request");
-            request.part("form[file]", f);
+            try {
+                byte[] basicCredentials = String.format("%s:%s", p.getProperty("username") , p.getProperty("password")).getBytes();
+                String encoded = Base64.encodeToString(basicCredentials, Base64.NO_WRAP);
+                urlConnection.setRequestProperty("Authorization", "Basic "+encoded);
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setRequestProperty("Content-Type", "audio/l16; rate=44100");
+                urlConnection.setRequestProperty("Transfer-Encoding", "identity");
+                urlConnection.setRequestProperty("Accept", "application/json");
+                urlConnection.setDoOutput(true);
+                urlConnection.setDoInput(true);
+                urlConnection.setUseCaches(false);
+                urlConnection.setChunkedStreamingMode(0);
 
-            return request.body();
+                InputStream in = new BufferedInputStream(new FileInputStream(f));
+                OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
+                writeStream(in, out);
+                int status = urlConnection.getResponseCode();
+                String message = urlConnection.getResponseMessage();
 
-        } catch (HttpRequestException exception) {
-            Log.e("MyApp", "Request exception", exception);
+                Log.d("MyApp", "Response code: " + status);
+                Log.d("MyApp", "Response message: " + message);
+                switch (status) {
+                    case 200:
+                    case 201:
+//                        return streamToString(urlConnection.getInputStream());
+                        String result = readInputStreamToString(urlConnection);
+                        String responseString =  new JSONObject(result).getJSONArray("results")
+                                .getJSONObject(0).getJSONArray("alternatives")
+                                .getJSONObject(0).getString("transcript");
+                        Log.d("MyApp", "response string: " + responseString);
+                        String translatedString = HttpRequest.get(p.getProperty("google_url"), true, "key", p.getProperty("google_key"), 'q', responseString, "source", "en", "target", "ja")
+                                .body();
+                        Log.d("MyApp", "translated string: " + translatedString);
+                        return translatedString;
+                }
+            } catch (Exception ex) {
+                Log.e("MyApp", "exception", ex);
+            } finally {
+                urlConnection.disconnect();
+            }
+
+            Log.d("MyApp", "Requesting multipart");
+
+            return null;
+
+        } catch (MalformedURLException ex) {
+            Log.e("MyApp", "Request exception", ex);
+            return null;
+        } catch (IOException ex) {
+            Log.e("MyApp", "Request exception", ex);
             return null;
         }
     }
