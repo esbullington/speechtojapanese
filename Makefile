@@ -1,5 +1,8 @@
 APP_DIRECTORY=/home/eric/repos/SpeechToJapanese
 
+default:
+	make build && make install
+
 build:
 	$(APP_DIRECTORY)/gradlew assembleDebug
 
@@ -11,5 +14,6 @@ run:
 
 install:
 	adb install -r $(APP_DIRECTORY)/build/outputs/apk/SpeechToJapanese-debug.apk && make run
+
 
 .PHONY: build release run install

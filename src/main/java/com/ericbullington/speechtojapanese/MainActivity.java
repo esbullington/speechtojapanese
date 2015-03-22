@@ -1,4 +1,5 @@
 package com.ericbullington.speechtojapanese;
+
 /*
  * The application needs to have the permission to write to external storage
  * if the output file is written to the external storage, and also the
@@ -32,9 +33,10 @@ import java.util.Properties;
 import com.github.kevinsawicki.http.HttpRequest;
 import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
 
+import com.ericbullington.speechtojapanese.PostSample;
 
-public class MainActivity extends Activity
-{
+
+public class MainActivity extends Activity {
     private static final String LOG_TAG = "AudioRecordTest";
     private static String mFileName = null;
     private static Context mContext;
@@ -170,7 +172,7 @@ public class MainActivity extends Activity
                 0));
         setContentView(ll);
 
-        new RequestTask().execute("http://google.com");
+        new PostSample(mContext).execute("http://google.com");
 
         PropertyReader pReader = new PropertyReader(mContext);
         p = pReader.getProperties("credentials.properties");
@@ -190,37 +192,5 @@ public class MainActivity extends Activity
             mPlayer = null;
         }
     }
-
-    private class RequestTask extends AsyncTask<String, Long, File> {
-
-        private static final String RequestTaskTag = "MyApp";
-
-        protected File doInBackground(String... urls) {
-            Log.d(RequestTaskTag, "Downloading task");
-            try {
-                HttpRequest request =  HttpRequest.get(urls[0]);
-                File file = null;
-                if (request.ok()) {
-                    file = File.createTempFile("download", ".tmp", mContext.getFilesDir());
-                    request.receive(file);
-                    publishProgress(file.length());
-                }
-                return file;
-            } catch (Exception exception) {
-                return null;
-            }
-        }
-
-        protected void onProgressUpdate(Long... progress) {
-            Log.d("MyApp", "Downloaded bytes: " + progress[0]);
-        }
-
-        protected void onPostExecute(File file) {
-            if (file != null)
-                Log.d("MyApp", "Downloaded file to: " + file.getAbsolutePath());
-            else
-                Log.d("MyApp", "Download failed");
-        }
-    }  
 
 }
