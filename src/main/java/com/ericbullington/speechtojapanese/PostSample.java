@@ -20,10 +20,14 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
+import com.google.gson.Gson;
 
 import org.json.JSONObject;
 
@@ -127,11 +131,13 @@ public class PostSample extends AsyncTask<String, Long, String> {
                                 .getJSONObject(0).getJSONArray("alternatives")
                                 .getJSONObject(0).getString("transcript");
                         Log.d(TAG, "response string: " + responseString);
-                        String translatedString = HttpRequest.get(p.getProperty("google_url"), true, "key", p.getProperty("google_key"), 'q', responseString, "source", "en", "target", "ja")
-                                .body();
-                        String finalString = new JSONObject(translatedString).getJSONObject("data").getJSONArray("translations").getJSONObject(0).getString("translatedText");
-                        Log.d(TAG, "translated string: " + finalString);
-                        return finalString;
+                        HttpRequest req = HttpRequest.get(p.getProperty("google_url"), true, "key", p.getProperty("google_key"), 'q', responseString, "source", "en", "target", "ja")
+                                .accept("application/json");
+                        String translatedString = req.body();
+                        Log.d(TAG, "translated string: " + translatedString);
+//                        String finalString = new JSONObject(translatedString).getJSONObject("data").getJSONArray("translations").getJSONObject(0).getString("translatedText");
+//                        Log.d(TAG, "final string: " + finalString);
+                        return translatedString;
                 }
             } catch (Exception ex) {
                 Log.e(TAG, "exception", ex);
@@ -153,7 +159,14 @@ public class PostSample extends AsyncTask<String, Long, String> {
     @Override
     protected void onPostExecute(String responseString) {
         if (responseString != null) {
-            Log.d(TAG, "onPostExecute string: " + responseString);
+                try {
+                    Map<String, Object> javaRootMapObject = new Gson().fromJson(responseString, Map.class);
+                    String s =   ( (Map) (  (List)  (  (Map)    (  javaRootMapObject.get("data")  ) ).get("translations")  ).get(0) ).get("translatedText").toString();
+                    Log.e(TAG, "Translated text: " + s);
+
+            } catch (Exception ex) {
+                Log.e(TAG, "JSON decode error", ex);
+            }
         } else {
             Log.d(TAG, "Request failed");
         }
