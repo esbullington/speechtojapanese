@@ -13,4 +13,6 @@
         <item>@color/red</item>
     </integer-array>
 
+    <color name="black_overlay">#66000000</color>
+
 </resources>

@@ -10,7 +10,7 @@
         android:layout_height="100dp"
         android:id="@+id/btnStart"
         android:layout_centerInParent="true"
-        android:background="@drawable/round_button"/>
+        android:background="@color/green"/>
 
     <TextView
         android:layout_width="fill_parent"

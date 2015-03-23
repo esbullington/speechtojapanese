@@ -15,10 +15,10 @@ android {
 
     buildTypes {
         release {
-	    minifyEnabled true
+            minifyEnabled true
             proguardFile getDefaultProguardFile('proguard-android.txt')
         }
-         debug {
+        debug {
             debuggable true
         }
     }
@@ -33,4 +33,5 @@ repositories {
 
 dependencies {
     compile 'com.google.code.gson:gson:2.2.4'
+    compile 'com.android.support:support-v4:22.0.0'
 }

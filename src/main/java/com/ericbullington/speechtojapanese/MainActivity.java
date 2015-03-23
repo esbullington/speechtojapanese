@@ -11,23 +11,21 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ShapeDrawable;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
-import android.widget.Button;
 import android.util.Log;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class MainActivity extends Activity {
     
     private static final String LOG_TAG="IBMWatsonMainActivity";
+
+    public final static String EXTRA_MESSAGE = "com.ericbullington.speechtojapanese.MESSAGE";
     
     private static final String FILE_EXTENSION = ".wav";
     private static final String FILE_DIRECTORY = "speechtojapanese";
@@ -62,14 +60,15 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 View btn = findViewById(R.id.btnStart);
                 if (isRecording) {
+                    btn.setBackgroundColor(getResources().getColor(R.color.green));
+                    btn.invalidate();
                     Log.d(LOG_TAG, "Stop recording");
                     stopRecording();
-                    btn.setBackgroundResource(R.drawable.round_button);
                 } else {
+                    btn.setBackgroundColor(getResources().getColor(R.color.red));
+                    btn.invalidate();
                     Log.d(LOG_TAG, "Now recording...");
                     startRecording();
-//                btn.setBackgroundColor(Color.RED);
-                    btn.setBackgroundResource(R.drawable.round_red_button);
                 }
             }
         });
@@ -105,27 +104,27 @@ public class MainActivity extends Activity {
     }
 
     private void startRecording(){
-        mRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, WAV_FORMAT_PCM, audioBufferSize);
+        mRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO, WAV_FORMAT_PCM, audioBufferSize);
 
-        int i = mRecorder.getState();
-        if(i==1)
+        if(mRecorder.getState() == 1)
             mRecorder.startRecording();
 
-        isRecording = true;
+        synchronized (this) {
+            isRecording = true;
+        }
 
         recordingThread = new Thread(new Runnable() {
-
             @Override
             public void run() {
-                writeAudioDataToFile();
+                writeAudioToFile();
             }
-        },"AudioRecorder Thread");
+        });
 
         recordingThread.start();
     }
 
-    private void writeAudioDataToFile(){
+    private void writeAudioToFile(){
 
         byte data[] = new byte[audioBufferSize];
         String filename = getTempFilename();
@@ -162,11 +161,14 @@ public class MainActivity extends Activity {
 
     private void stopRecording(){
         if(null != mRecorder){
-            isRecording = false;
 
-            int i = mRecorder.getState();
-            if(i==1)
+            synchronized (this) {
+                isRecording = false;
+            }
+
+            if(mRecorder.getState() == 1)
                 mRecorder.stop();
+
             mRecorder.release();
 
             mRecorder = null;
@@ -205,7 +207,7 @@ public class MainActivity extends Activity {
             in.close();
             out.close();
 
-            new PostSample(mContext).execute(outFilename);
+            new PostSample(this).execute(outFilename);
 
         } catch (IOException e) {
             e.printStackTrace();

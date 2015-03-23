@@ -1,5 +1,7 @@
 package com.ericbullington.speechtojapanese;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.util.Base64;
 import android.util.Log;
 
@@ -33,13 +35,14 @@ import org.json.JSONObject;
 
 public class PostSample extends AsyncTask<String, Long, String> {
 
+    public final static String EXTRA_MESSAGE = "com.ericbullington.speechtojapanese.MESSAGE";
     private static int BUFSIZE = 1024;
     private static String TAG = "PostSample";
-    private Context context;
+    private Context mContext;
     private Properties p;
 
     public PostSample(Context context) {
-        this.context = context;
+        this.mContext = context;
     }
 
     private String readInputStreamToString(HttpURLConnection connection) {
@@ -91,7 +94,7 @@ public class PostSample extends AsyncTask<String, Long, String> {
 
         try {
 
-            PropertyReader pReader = new PropertyReader(this.context);
+            PropertyReader pReader = new PropertyReader(this.mContext);
             p = pReader.getProperties("credentials.properties");
 
 
@@ -158,12 +161,9 @@ public class PostSample extends AsyncTask<String, Long, String> {
     @Override
     protected void onPostExecute(String responseString) {
         if (responseString != null) {
-                try {
-                    Log.e(TAG, "Translated text: " + responseString);
-
-            } catch (Exception ex) {
-                Log.e(TAG, "JSON decode error", ex);
-            }
+            Intent intent = new Intent(mContext, TranslationActivity.class);
+            intent.putExtra(EXTRA_MESSAGE, responseString);
+            mContext.startActivity(intent);
         } else {
             Log.d(TAG, "Request failed");
         }
