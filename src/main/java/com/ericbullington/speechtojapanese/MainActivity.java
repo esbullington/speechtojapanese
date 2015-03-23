@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import android.app.Activity;
 import android.content.Context;
@@ -22,16 +24,16 @@ import android.util.Log;
 
 public class MainActivity extends Activity {
     private static final String APP_TAG="IBM_WATSON";
-    private static final int RECORDER_BPP = 16;
-    private static final String AUDIO_RECORDER_FILE_EXT_WAV = ".wav";
-    private static final String AUDIO_RECORDER_FOLDER = "AudioRecorder";
-    private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
-    private static final int RECORDER_SAMPLERATE = 44100;
-    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
-    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    private static final String AUDIO_mRecorder_FILE_EXT_WAV = ".wav";
+    private static final String AUDIO_mRecorder_FOLDER = "AudiomRecorder";
+    private static final String AUDIO_mRecorder_TEMP_FILE = "record_temp.raw";
+    private static final int BPP = 16;
+    private static final int SAMPLERATE = 44100;
+    private static final int CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    private static final int WAV_FORMAT_PCM = AudioFormat.ENCODING_PCM_16BIT;
 
     private Context mContext = null;
-    private AudioRecord recorder = null;
+    private AudioRecord mRecorder = null;
     private int bufferSize = 0;
     private Thread recordingThread = null;
     private boolean isRecording = false;
@@ -46,7 +48,7 @@ public class MainActivity extends Activity {
 
         mContext = getApplicationContext();
 
-        bufferSize = AudioRecord.getMinBufferSize(8000,
+        bufferSize = AudioRecord.getMinBufferSize(SAMPLERATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
     }
@@ -67,38 +69,38 @@ public class MainActivity extends Activity {
 
     private String getFilename(){
         String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_RECORDER_FOLDER);
+        File file = new File(filepath,AUDIO_mRecorder_FOLDER);
 
         if(!file.exists()){
             file.mkdirs();
         }
 
-        return (file.getAbsolutePath() + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV);
+        return (file.getAbsolutePath() + "/" + System.currentTimeMillis() + AUDIO_mRecorder_FILE_EXT_WAV);
     }
 
     private String getTempFilename(){
         String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_RECORDER_FOLDER);
+        File file = new File(filepath,AUDIO_mRecorder_FOLDER);
 
         if(!file.exists()){
             file.mkdirs();
         }
 
-        File tempFile = new File(filepath,AUDIO_RECORDER_TEMP_FILE);
+        File tempFile = new File(filepath,AUDIO_mRecorder_TEMP_FILE);
 
         if(tempFile.exists())
             tempFile.delete();
 
-        return (file.getAbsolutePath() + "/" + AUDIO_RECORDER_TEMP_FILE);
+        return (file.getAbsolutePath() + "/" + AUDIO_mRecorder_TEMP_FILE);
     }
 
     private void startRecording(){
-        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
+        mRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                SAMPLERATE, CHANNELS, WAV_FORMAT_PCM, bufferSize);
 
-        int i = recorder.getState();
+        int i = mRecorder.getState();
         if(i==1)
-            recorder.startRecording();
+            mRecorder.startRecording();
 
         isRecording = true;
 
@@ -129,7 +131,7 @@ public class MainActivity extends Activity {
 
         if(null != os){
             while(isRecording){
-                read = recorder.read(data, 0, bufferSize);
+                read = mRecorder.read(data, 0, bufferSize);
 
                 if(AudioRecord.ERROR_INVALID_OPERATION != read){
                     try {
@@ -149,15 +151,15 @@ public class MainActivity extends Activity {
     }
 
     private void stopRecording(){
-        if(null != recorder){
+        if(null != mRecorder){
             isRecording = false;
 
-            int i = recorder.getState();
+            int i = mRecorder.getState();
             if(i==1)
-                recorder.stop();
-            recorder.release();
+                mRecorder.stop();
+            mRecorder.release();
 
-            recorder = null;
+            mRecorder = null;
             recordingThread = null;
         }
 
@@ -175,24 +177,23 @@ public class MainActivity extends Activity {
     private void copyWaveFile(String inFilename,String outFilename){
         FileInputStream in = null;
         FileOutputStream out = null;
-        long totalAudioLen = 0;
-        long totalDataLen = totalAudioLen + 36;
-        long longSampleRate = RECORDER_SAMPLERATE;
+        int audioLength = 0;
+        int dataLength = audioLength + 36;
         int channels = 2;
-        long byteRate = RECORDER_BPP * RECORDER_SAMPLERATE * channels/8;
+        long byteRate = BPP * SAMPLERATE * channels / 8;
 
         byte[] data = new byte[bufferSize];
 
         try {
             in = new FileInputStream(inFilename);
             out = new FileOutputStream(outFilename);
-            totalAudioLen = in.getChannel().size();
-            totalDataLen = totalAudioLen + 36;
+            audioLength = (int) in.getChannel().size();
+            dataLength = audioLength + 36;
 
-            Log.d(APP_TAG, "File size: " + totalDataLen);
+            Log.d(APP_TAG, "File size: " + dataLength);
+            byte[] header = makeWavHeader(SAMPLERATE, AudioFormat.CHANNEL_IN_MONO, channels, dataLength);
 
-            WriteWaveFileHeader(out, totalAudioLen, totalDataLen,
-                    longSampleRate, channels, byteRate);
+            out.write(header, 0, 44);
 
             while(in.read(data) != -1){
                 out.write(data);
@@ -210,59 +211,39 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void WriteWaveFileHeader(
-            FileOutputStream out, long totalAudioLen,
-            long totalDataLen, long longSampleRate, int channels,
-            long byteRate) throws IOException {
+    // makeWaveHeader From AOSP
+    // https://github.com/android/platform_frameworks_base/blob/master/core/java/android/speech/tts/FileSynthesisCallback.java
+    // Apache License, Version 2.0
+    private byte[] makeWavHeader(int sampleRateInHz, int audioFormat, int channelCount,
+        int dataLength) throws IOException {
 
-        byte[] header = new byte[44];
+        final int WAV_HEADER_LENGTH = 44;
 
-        header[0] = 'R';  // RIFF/WAVE header
-        header[1] = 'I';
-        header[2] = 'F';
-        header[3] = 'F';
-        header[4] = (byte) (totalDataLen & 0xff);
-        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
-        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
-        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
-        header[8] = 'W';
-        header[9] = 'A';
-        header[10] = 'V';
-        header[11] = 'E';
-        header[12] = 'f';  // 'fmt ' chunk
-        header[13] = 'm';
-        header[14] = 't';
-        header[15] = ' ';
-        header[16] = 16;  // 4 bytes: size of 'fmt ' chunk
-        header[17] = 0;
-        header[18] = 0;
-        header[19] = 0;
-        header[20] = 1;  // format = 1
-        header[21] = 0;
-        header[22] = (byte) channels;
-        header[23] = 0;
-        header[24] = (byte) (longSampleRate & 0xff);
-        header[25] = (byte) ((longSampleRate >> 8) & 0xff);
-        header[26] = (byte) ((longSampleRate >> 16) & 0xff);
-        header[27] = (byte) ((longSampleRate >> 24) & 0xff);
-        header[28] = (byte) (byteRate & 0xff);
-        header[29] = (byte) ((byteRate >> 8) & 0xff);
-        header[30] = (byte) ((byteRate >> 16) & 0xff);
-        header[31] = (byte) ((byteRate >> 24) & 0xff);
-        header[32] = (byte) (2 * 16 / 8);  // block align
-        header[33] = 0;
-        header[34] = RECORDER_BPP;  // bits per sample
-        header[35] = 0;
-        header[36] = 'd';
-        header[37] = 'a';
-        header[38] = 't';
-        header[39] = 'a';
-        header[40] = (byte) (totalAudioLen & 0xff);
-        header[41] = (byte) ((totalAudioLen >> 8) & 0xff);
-        header[42] = (byte) ((totalAudioLen >> 16) & 0xff);
-        header[43] = (byte) ((totalAudioLen >> 24) & 0xff);
+        int sampleSizeInBytes = (audioFormat == AudioFormat.ENCODING_PCM_8BIT ? 1 : 2);
+        int byteRate = sampleRateInHz * sampleSizeInBytes * channelCount;
+        short blockAlign = (short) (sampleSizeInBytes * channelCount);
+        short bitsPerSample = (short) (sampleSizeInBytes * 8);
 
-        out.write(header, 0, 44);
+//        byte[] header = new byte[44];
+
+        byte[] headerBuf = new byte[WAV_HEADER_LENGTH];
+        ByteBuffer header = ByteBuffer.wrap(headerBuf);
+        header.order(ByteOrder.LITTLE_ENDIAN);
+
+        header.put(new byte[]{ 'R', 'I', 'F', 'F' });
+        header.putInt(dataLength + WAV_HEADER_LENGTH - 8);  // RIFF chunk size
+        header.put(new byte[]{ 'W', 'A', 'V', 'E' });
+        header.put(new byte[]{ 'f', 'm', 't', ' ' });
+        header.putInt(16);  // size of fmt chunk
+        header.putShort((short) WAV_FORMAT_PCM);
+        header.putShort((short) channelCount);
+        header.putInt(sampleRateInHz);
+        header.putInt(byteRate);
+        header.putShort(blockAlign);
+        header.putShort(bitsPerSample);
+        header.put(new byte[]{ 'd', 'a', 't', 'a' });
+        header.putInt(dataLength);
+        return headerBuf;
     }
 
     private View.OnClickListener btnClick = new View.OnClickListener() {

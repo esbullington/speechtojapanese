@@ -15,30 +15,22 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.System;
 import java.lang.StringBuilder;
-import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
-import java.net.Proxy;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
-import com.github.kevinsawicki.http.HttpRequest.ConnectionFactory;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class PostSample extends AsyncTask<String, Long, String> {
 
     private static int BUFSIZE = 1024;
-    private static String TAG = "MyApp";
+    private static String TAG = "PostSample";
     private Context context;
     private Properties p;
 
@@ -91,7 +83,7 @@ public class PostSample extends AsyncTask<String, Long, String> {
 
     protected String doInBackground(String... params) {
 
-        Log.d("MyApp", "Requesting speech-to-text...");
+        Log.i(TAG, "Requesting speech-to-text and translation...");
 
         try {
 
@@ -125,37 +117,35 @@ public class PostSample extends AsyncTask<String, Long, String> {
                 int status = urlConnection.getResponseCode();
                 String message = urlConnection.getResponseMessage();
 
-                Log.d("MyApp", "Response code: " + status);
-                Log.d("MyApp", "Response message: " + message);
+                Log.d(TAG, "Response code: " + status);
+                Log.d(TAG, "Response message: " + message);
                 switch (status) {
                     case 200:
                     case 201:
-//                        return streamToString(urlConnection.getInputStream());
                         String result = readInputStreamToString(urlConnection);
                         String responseString =  new JSONObject(result).getJSONArray("results")
                                 .getJSONObject(0).getJSONArray("alternatives")
                                 .getJSONObject(0).getString("transcript");
-                        Log.d("MyApp", "response string: " + responseString);
+                        Log.d(TAG, "response string: " + responseString);
                         String translatedString = HttpRequest.get(p.getProperty("google_url"), true, "key", p.getProperty("google_key"), 'q', responseString, "source", "en", "target", "ja")
                                 .body();
-                        Log.d("MyApp", "translated string: " + translatedString);
-                        return translatedString;
+                        String finalString = new JSONObject(translatedString).getJSONObject("data").getJSONArray("translations").getJSONObject(0).getString("translatedText");
+                        Log.d(TAG, "translated string: " + finalString);
+                        return finalString;
                 }
             } catch (Exception ex) {
-                Log.e("MyApp", "exception", ex);
+                Log.e(TAG, "exception", ex);
             } finally {
                 urlConnection.disconnect();
             }
 
-            Log.d("MyApp", "Requesting multipart");
-
             return null;
 
         } catch (MalformedURLException ex) {
-            Log.e("MyApp", "Request exception", ex);
+            Log.e(TAG, "Request exception", ex);
             return null;
         } catch (IOException ex) {
-            Log.e("MyApp", "Request exception", ex);
+            Log.e(TAG, "Request exception", ex);
             return null;
         }
     }
@@ -163,9 +153,9 @@ public class PostSample extends AsyncTask<String, Long, String> {
     @Override
     protected void onPostExecute(String responseString) {
         if (responseString != null) {
-            Log.d("MyApp", responseString);
+            Log.d(TAG, "onPostExecute string: " + responseString);
         } else {
-            Log.d("MyApp", "Request failed");
+            Log.d(TAG, "Request failed");
         }
     }
 
