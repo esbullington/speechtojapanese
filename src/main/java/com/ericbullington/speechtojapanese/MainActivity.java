@@ -13,6 +13,8 @@ import java.nio.ByteOrder;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ShapeDrawable;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -22,19 +24,21 @@ import android.view.View;
 import android.widget.Button;
 import android.util.Log;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class MainActivity extends Activity {
-    private static final String APP_TAG="IBM_WATSON";
-    private static final String AUDIO_mRecorder_FILE_EXT_WAV = ".wav";
-    private static final String AUDIO_mRecorder_FOLDER = "AudiomRecorder";
-    private static final String AUDIO_mRecorder_TEMP_FILE = "record_temp.raw";
+    
+    private static final String LOG_TAG="IBMWatsonMainActivity";
+    
+    private static final String FILE_EXTENSION = ".wav";
+    private static final String FILE_DIRECTORY = "speechtojapanese";
+    private static final String FILE_NAME = "temp.audio";
     private static final int BPP = 16;
-    private static final int SAMPLERATE = 44100;
-    private static final int CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    private static final int SAMPLE_RATE = 44100;
     private static final int WAV_FORMAT_PCM = AudioFormat.ENCODING_PCM_16BIT;
 
     private Context mContext = null;
     private AudioRecord mRecorder = null;
-    private int bufferSize = 0;
+    private int audioBufferSize = 0;
     private Thread recordingThread = null;
     private boolean isRecording = false;
 
@@ -44,59 +48,65 @@ public class MainActivity extends Activity {
         setContentView(R.layout.main);
 
         setButtonHandlers();
-        enableButtons(false);
 
         mContext = getApplicationContext();
 
-        bufferSize = AudioRecord.getMinBufferSize(SAMPLERATE,
+        audioBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
     }
 
     private void setButtonHandlers() {
-        ((Button)findViewById(R.id.btnStart)).setOnClickListener(btnClick);
-        ((Button)findViewById(R.id.btnStop)).setOnClickListener(btnClick);
-    }
-
-    private void enableButton(int id,boolean isEnable){
-        ((Button)findViewById(id)).setEnabled(isEnable);
-    }
-
-    private void enableButtons(boolean isRecording) {
-        enableButton(R.id.btnStart,!isRecording);
-        enableButton(R.id.btnStop,isRecording);
+        findViewById(R.id.btnStart).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                View btn = findViewById(R.id.btnStart);
+                if (isRecording) {
+                    Log.d(LOG_TAG, "Stop recording");
+                    stopRecording();
+                    btn.setBackgroundResource(R.drawable.round_button);
+                } else {
+                    Log.d(LOG_TAG, "Now recording...");
+                    startRecording();
+//                btn.setBackgroundColor(Color.RED);
+                    btn.setBackgroundResource(R.drawable.round_red_button);
+                }
+            }
+        });
     }
 
     private String getFilename(){
         String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_mRecorder_FOLDER);
+        File file = new File(filepath,FILE_DIRECTORY);
 
         if(!file.exists()){
             file.mkdirs();
         }
 
-        return (file.getAbsolutePath() + "/" + System.currentTimeMillis() + AUDIO_mRecorder_FILE_EXT_WAV);
+        return (file.getAbsolutePath() + "/" + System.currentTimeMillis() + FILE_EXTENSION);
     }
 
     private String getTempFilename(){
-        String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_mRecorder_FOLDER);
 
-        if(!file.exists()){
-            file.mkdirs();
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+
+        File fileDir = new File(filepath,FILE_DIRECTORY);
+
+        if(!fileDir.exists()){
+            fileDir.mkdirs();
         }
 
-        File tempFile = new File(filepath,AUDIO_mRecorder_TEMP_FILE);
+        File file = new File(filepath,FILE_NAME);
 
-        if(tempFile.exists())
-            tempFile.delete();
+        if(file.exists())
+            file.delete();
 
-        return (file.getAbsolutePath() + "/" + AUDIO_mRecorder_TEMP_FILE);
+        return (fileDir.getAbsolutePath() + "/" + FILE_NAME);
     }
 
     private void startRecording(){
         mRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                SAMPLERATE, CHANNELS, WAV_FORMAT_PCM, bufferSize);
+                SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, WAV_FORMAT_PCM, audioBufferSize);
 
         int i = mRecorder.getState();
         if(i==1)
@@ -116,26 +126,26 @@ public class MainActivity extends Activity {
     }
 
     private void writeAudioDataToFile(){
-        byte data[] = new byte[bufferSize];
+
+        byte data[] = new byte[audioBufferSize];
         String filename = getTempFilename();
-        FileOutputStream os = null;
+        FileOutputStream out = null;
 
         try {
-            os = new FileOutputStream(filename);
+            out = new FileOutputStream(filename);
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         int read = 0;
 
-        if(null != os){
+        if(null != out){
             while(isRecording){
-                read = mRecorder.read(data, 0, bufferSize);
+                read = mRecorder.read(data, 0, audioBufferSize);
 
                 if(AudioRecord.ERROR_INVALID_OPERATION != read){
                     try {
-                        os.write(data);
+                        out.write(data);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -143,7 +153,7 @@ public class MainActivity extends Activity {
             }
 
             try {
-                os.close();
+                out.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -163,26 +173,20 @@ public class MainActivity extends Activity {
             recordingThread = null;
         }
 
-        copyWaveFile(getTempFilename(),getFilename());
-        deleteTempFile();
-
+        postWaveFile(getTempFilename(), getFilename());
+        new File(getTempFilename()).delete();
     }
 
-    private void deleteTempFile() {
-        File file = new File(getTempFilename());
 
-        file.delete();
-    }
+    private void postWaveFile(String inFilename,String outFilename){
 
-    private void copyWaveFile(String inFilename,String outFilename){
         FileInputStream in = null;
         FileOutputStream out = null;
+        int channelNumber = 2;
         int audioLength = 0;
-        int dataLength = audioLength + 36;
-        int channels = 2;
-        long byteRate = BPP * SAMPLERATE * channels / 8;
+        int dataLength = 36;
 
-        byte[] data = new byte[bufferSize];
+        byte[] data = new byte[audioBufferSize];
 
         try {
             in = new FileInputStream(inFilename);
@@ -190,8 +194,7 @@ public class MainActivity extends Activity {
             audioLength = (int) in.getChannel().size();
             dataLength = audioLength + 36;
 
-            Log.d(APP_TAG, "File size: " + dataLength);
-            byte[] header = makeWavHeader(SAMPLERATE, AudioFormat.CHANNEL_IN_MONO, channels, dataLength);
+            byte[] header = makeWavHeader(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, channelNumber, dataLength);
 
             out.write(header, 0, 44);
 
@@ -204,8 +207,6 @@ public class MainActivity extends Activity {
 
             new PostSample(mContext).execute(outFilename);
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -214,13 +215,13 @@ public class MainActivity extends Activity {
     // makeWaveHeader From AOSP
     // https://github.com/android/platform_frameworks_base/blob/master/core/java/android/speech/tts/FileSynthesisCallback.java
     // Apache License, Version 2.0
-    private byte[] makeWavHeader(int sampleRateInHz, int audioFormat, int channelCount,
+    private byte[] makeWavHeader(int SAMPLE_RATEInHz, int audioFormat, int channelCount,
         int dataLength) throws IOException {
 
         final int WAV_HEADER_LENGTH = 44;
 
         int sampleSizeInBytes = (audioFormat == AudioFormat.ENCODING_PCM_8BIT ? 1 : 2);
-        int byteRate = sampleRateInHz * sampleSizeInBytes * channelCount;
+        int byteRate = SAMPLE_RATEInHz * sampleSizeInBytes * channelCount;
         short blockAlign = (short) (sampleSizeInBytes * channelCount);
         short bitsPerSample = (short) (sampleSizeInBytes * 8);
 
@@ -237,7 +238,7 @@ public class MainActivity extends Activity {
         header.putInt(16);  // size of fmt chunk
         header.putShort((short) WAV_FORMAT_PCM);
         header.putShort((short) channelCount);
-        header.putInt(sampleRateInHz);
+        header.putInt(SAMPLE_RATEInHz);
         header.putInt(byteRate);
         header.putShort(blockAlign);
         header.putShort(bitsPerSample);
@@ -246,28 +247,4 @@ public class MainActivity extends Activity {
         return headerBuf;
     }
 
-    private View.OnClickListener btnClick = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            switch(v.getId()){
-                case R.id.btnStart:{
-                    Log.d(APP_TAG, "Start Recording");
-
-                    enableButtons(true);
-                    startRecording();
-
-                    break;
-                }
-                case R.id.btnStop:{
-                    Log.d(APP_TAG, "Stop Recording");
-
-                    enableButtons(false);
-                    stopRecording();
-
-
-                    break;
-                }
-            }
-        }
-    };
 }

@@ -135,9 +135,8 @@ public class PostSample extends AsyncTask<String, Long, String> {
                                 .accept("application/json");
                         String translatedString = req.body();
                         Log.d(TAG, "translated string: " + translatedString);
-//                        String finalString = new JSONObject(translatedString).getJSONObject("data").getJSONArray("translations").getJSONObject(0).getString("translatedText");
-//                        Log.d(TAG, "final string: " + finalString);
-                        return translatedString;
+                        Map javaRootMapObject = new Gson().fromJson(translatedString, Map.class);
+                        return   ( (Map) (  (List)  (  (Map)    (  javaRootMapObject.get("data")  ) ).get("translations")  ).get(0) ).get("translatedText").toString();
                 }
             } catch (Exception ex) {
                 Log.e(TAG, "exception", ex);
@@ -160,9 +159,7 @@ public class PostSample extends AsyncTask<String, Long, String> {
     protected void onPostExecute(String responseString) {
         if (responseString != null) {
                 try {
-                    Map<String, Object> javaRootMapObject = new Gson().fromJson(responseString, Map.class);
-                    String s =   ( (Map) (  (List)  (  (Map)    (  javaRootMapObject.get("data")  ) ).get("translations")  ).get(0) ).get("translatedText").toString();
-                    Log.e(TAG, "Translated text: " + s);
+                    Log.e(TAG, "Translated text: " + responseString);
 
             } catch (Exception ex) {
                 Log.e(TAG, "JSON decode error", ex);

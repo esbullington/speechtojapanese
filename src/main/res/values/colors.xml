@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <item name="blue" type="color">#ff33b5e5</item>
+    <item name="white" type="color">#ffffffff</item>
+    <item name="green" type="color">#00a800</item>
+    <item name="red" type="color">#ff0000</item>
+
+    <integer-array name="app_colors">
+        <item>@color/blue</item>
+        <item>@color/green</item>
+        <item>@color/white</item>
+        <item>@color/red</item>
+    </integer-array>
+
+</resources>
