@@ -1,6 +1,7 @@
 package com.ericbullington.speechtojapanese;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.util.Base64;
 import android.util.Log;
@@ -40,10 +41,18 @@ public class PostSample extends AsyncTask<String, Long, String> {
     private static String TAG = "PostSample";
     private Context mContext;
     private Properties p;
+    private ProgressDialog dialog;
 
     public PostSample(Context context) {
         this.mContext = context;
+        dialog = new ProgressDialog(context);
     }
+
+    protected void onPreExecute() {
+        dialog.setMessage("Loading...");
+        dialog.show();
+    }
+
 
     private String readInputStreamToString(HttpURLConnection connection) {
         String result = null;
@@ -156,11 +165,17 @@ public class PostSample extends AsyncTask<String, Long, String> {
             Log.e(TAG, "Request exception", ex);
             return null;
         }
+//        try { Thread.sleep(3000);
+//        } catch (Exception ex) {}
+//        return "temp";
     }
 
     @Override
     protected void onPostExecute(String responseString) {
         if (responseString != null) {
+            if (dialog.isShowing()) {
+                dialog.dismiss();
+            }
             Intent intent = new Intent(mContext, TranslationActivity.class);
             intent.putExtra(EXTRA_MESSAGE, responseString);
             mContext.startActivity(intent);

@@ -19,6 +19,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.util.Log;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class MainActivity extends Activity {
@@ -58,15 +61,20 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnStart).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                View btn = findViewById(R.id.btnStart);
+                ColoredButton btn = (ColoredButton) findViewById(R.id.btnStart);
                 if (isRecording) {
-                    btn.setBackgroundColor(getResources().getColor(R.color.green));
-                    btn.invalidate();
+                    v.clearAnimation();
+                    btn.setColorGreen();
                     Log.d(LOG_TAG, "Stop recording");
                     stopRecording();
                 } else {
-                    btn.setBackgroundColor(getResources().getColor(R.color.red));
-                    btn.invalidate();
+                    btn.setColorRed();
+                    Animation mAnimation = new AlphaAnimation(1, 0);
+                    mAnimation.setDuration(200);
+                    mAnimation.setInterpolator(new StepInterpolator(0.5f));
+                    mAnimation.setRepeatCount(Animation.INFINITE);
+                    mAnimation.setRepeatMode(Animation.REVERSE);
+                    btn.startAnimation(mAnimation);
                     Log.d(LOG_TAG, "Now recording...");
                     startRecording();
                 }
