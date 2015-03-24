@@ -1,4 +1,4 @@
-package com.ericbullington.speechtojapanese;
+package com.ericbullington.speechtojapanese.ui;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -6,6 +6,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.ImageButton;
+
+import com.ericbullington.speechtojapanese.R;
 
 
 public class ColoredButton extends ImageButton {
