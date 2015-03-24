@@ -5,9 +5,10 @@ import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.Button;
+import android.widget.ImageButton;
 
 
-public class ColoredButton extends Button {
+public class ColoredButton extends ImageButton {
 
     private boolean isGreen = true;
 
@@ -39,7 +40,11 @@ public class ColoredButton extends Button {
     }
 
     private void changeBgColor() {
-        setBackgroundResource(isGreen ? R.drawable.green_button : R.drawable.red_button);
+        if (isGreen) {
+            setImageResource(R.drawable.ic_action_playback_play);
+        } else {
+            setImageResource(R.drawable.ic_action_playback_stop);
+        }
     }
 
     public boolean onTouchEvent (@NonNull MotionEvent event) {

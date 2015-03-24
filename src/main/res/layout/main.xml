@@ -6,19 +6,22 @@
     android:layout_height="fill_parent"
     android:padding="20dip">
 
-    <com.ericbullington.speechtojapanese.ColoredButton
-        android:id="@+id/btnStart"
-        android:layout_centerInParent="true"
-        android:background="@drawable/green_button"
-        android:layout_width="100dp"
-        android:layout_height="100dp">
-        </com.ericbullington.speechtojapanese.ColoredButton>
-
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:textColor="@color/dark_grey"
         android:text="@string/description"
-        android:layout_weight="1.0"
-        android:textSize="20dip"/>
+        android:textSize="25sp"/>
+
+    <com.ericbullington.speechtojapanese.ColoredButton
+        android:id="@+id/btnStart"
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_action_playback_play"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        android:background="@android:color/transparent"
+        android:padding="0dp"
+     />
 
 </RelativeLayout>

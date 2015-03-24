@@ -23,10 +23,13 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 
+// Approach to recording to audio sampling inspired by article "Audio Recording in .wav format
+// http://www.edumobile.org/android/android-development/audio-recording-in-wav-format-in-android-programming/
+// Actual WAV file headers taken from AOSP project and licensed under Apache
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class MainActivity extends Activity {
     
-    private static final String LOG_TAG="IBMWatsonMainActivity";
+    private static final String TAG="MainActivity";
 
     public final static String EXTRA_MESSAGE = "com.ericbullington.speechtojapanese.MESSAGE";
     
@@ -46,18 +49,19 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Context
+        mContext = getApplicationContext();
+        
+        // UI
         setContentView(R.layout.main);
 
-        setButtonHandlers();
-
-        mContext = getApplicationContext();
-
+        // Set audio buffer size for given sample rate
         audioBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
-    }
-
-    private void setButtonHandlers() {
+        
+        // Set click listener
         findViewById(R.id.btnStart).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -65,17 +69,17 @@ public class MainActivity extends Activity {
                 if (isRecording) {
                     v.clearAnimation();
                     btn.setColorGreen();
-                    Log.d(LOG_TAG, "Stop recording");
+                    Log.i(TAG, "Recording stopped.");
                     stopRecording();
                 } else {
                     btn.setColorRed();
                     Animation mAnimation = new AlphaAnimation(1, 0);
-                    mAnimation.setDuration(200);
+                    mAnimation.setDuration(600);
                     mAnimation.setInterpolator(new StepInterpolator(0.5f));
                     mAnimation.setRepeatCount(Animation.INFINITE);
                     mAnimation.setRepeatMode(Animation.REVERSE);
                     btn.startAnimation(mAnimation);
-                    Log.d(LOG_TAG, "Now recording...");
+                    Log.i(TAG, "Now recording...");
                     startRecording();
                 }
             }
@@ -125,14 +129,14 @@ public class MainActivity extends Activity {
         recordingThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                writeAudioToFile();
+                writeTempAudio();
             }
         });
 
         recordingThread.start();
     }
 
-    private void writeAudioToFile(){
+    private void writeTempAudio(){
 
         byte data[] = new byte[audioBufferSize];
         String filename = getTempFilename();
@@ -140,29 +144,30 @@ public class MainActivity extends Activity {
 
         try {
             out = new FileOutputStream(filename);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        } catch (FileNotFoundException ex) {
+            Log.i(TAG, "Error writing audio to file: ", ex);
         }
 
         int read = 0;
 
         if(null != out){
+            // Keep recording until user presses "stop" button
             while(isRecording){
                 read = mRecorder.read(data, 0, audioBufferSize);
 
                 if(AudioRecord.ERROR_INVALID_OPERATION != read){
                     try {
                         out.write(data);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    } catch (IOException ex) {
+                        Log.i(TAG, "Error writing audio to file: ", ex);
                     }
                 }
             }
 
             try {
                 out.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ex) {
+                Log.i(TAG, "Error writing audio to file: ", ex);
             }
         }
     }

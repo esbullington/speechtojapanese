@@ -5,12 +5,16 @@
     <item name="white" type="color">#ffffffff</item>
     <item name="green" type="color">#00a800</item>
     <item name="red" type="color">#ff0000</item>
+    <item name="dark_grey" type="color">#556270</item>
+    <item name="light_grey" type="color">#f0f0f0</item>
 
     <integer-array name="app_colors">
         <item>@color/blue</item>
         <item>@color/green</item>
         <item>@color/white</item>
         <item>@color/red</item>
+        <item>@color/dark_grey</item>
+        <item>@color/light_grey</item>
     </integer-array>
 
     <color name="black_overlay">#66000000</color>
