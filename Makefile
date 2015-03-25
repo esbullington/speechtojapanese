@@ -22,5 +22,11 @@ run:
 install:
 	adb install -r $(APP_DIRECTORY)/build/outputs/apk/SpeechToJapanese-debug.apk && make run
 
+## From http://stackoverflow.com/a/26339924/1002047
 
-.PHONY: build release run install
+list:
+	@echo "AVAILABLE TARGETS:"
+	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | xargs | sed 's/ /\n/ig'
+
+
+.PHONY: build release run install list restart all
