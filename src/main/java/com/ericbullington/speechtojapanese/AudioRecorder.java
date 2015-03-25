@@ -22,31 +22,32 @@ import java.nio.ByteOrder;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class AudioRecorder {
 
+    // Class constants
     private static final String TAG="AudioRecorder";
 
-
-
+    // Audio file config
     private static final String FILE_EXTENSION = ".wav";
     private static final String FILE_DIRECTORY = "speechtojapanese";
     private static final String FILE_NAME = "temp.audio";
-    private static final int BPP = 16;
-    private static final int SAMPLE_RATE = 44100;
-    private static final int WAV_FORMAT_PCM = AudioFormat.ENCODING_PCM_16BIT;
+
+    // Audio constants
+    private static final int ENCODING_PCM_16BIT = AudioFormat.ENCODING_PCM_16BIT;
+    private static final int CHANNEL_IN_MONO = AudioFormat.CHANNEL_IN_MONO;
+    private static final int SAMPLE_RATEInHz = 44100;
 
     private Context mContext = null;
     private AudioRecord mRecorder = null;
-    private int audioBufferSize = 0;
-    private Thread recordingThread = null;
-    private boolean isRecording = false;
+    private int mAudioBufferSize = 0;
+    private Thread mRecordingThread = null;
+    private boolean mIsRecording = false;
     
     public AudioRecorder(Context mContext) {
 
         this.mContext = mContext;
 
         // Set audio buffer size for given sample rate
-        audioBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
+        mAudioBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATEInHz, CHANNEL_IN_MONO,
+                ENCODING_PCM_16BIT);
 
     }
 
@@ -86,50 +87,51 @@ public class AudioRecorder {
     }
 
     public void start(){
-        mRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO, WAV_FORMAT_PCM, audioBufferSize);
+        mRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATEInHz,
+                CHANNEL_IN_MONO, ENCODING_PCM_16BIT, mAudioBufferSize);
 
         if(mRecorder.getState() == 1)
             mRecorder.startRecording();
 
         synchronized (this) {
-            isRecording = true;
+            mIsRecording = true;
         }
 
-        recordingThread = new Thread(new Runnable() {
+        mRecordingThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 writeTempAudio();
             }
         });
 
-        recordingThread.start();
+        mRecordingThread.start();
     }
 
     private void writeTempAudio(){
 
-        byte data[] = new byte[audioBufferSize];
+        // Buffer size set in constructor by AudioRecord
+        byte data[] = new byte[mAudioBufferSize];
         String filename = getTempFilename();
         FileOutputStream out = null;
 
         try {
             out = new FileOutputStream(filename);
         } catch (FileNotFoundException ex) {
-            Log.i(TAG, "Error writing audio to file: ", ex);
+            Log.e(TAG, "Error writing audio to file: ", ex);
         }
 
         int read = 0;
 
         if(null != out){
             // Keep recording until user presses "stop" button
-            while(isRecording){
-                read = mRecorder.read(data, 0, audioBufferSize);
+            while(mIsRecording){
+                read = mRecorder.read(data, 0, mAudioBufferSize);
 
                 if(AudioRecord.ERROR_INVALID_OPERATION != read){
                     try {
                         out.write(data);
                     } catch (IOException ex) {
-                        Log.i(TAG, "Error writing audio to file: ", ex);
+                        Log.e(TAG, "Error writing audio to file: ", ex);
                     }
                 }
             }
@@ -137,7 +139,7 @@ public class AudioRecorder {
             try {
                 out.close();
             } catch (IOException ex) {
-                Log.i(TAG, "Error writing audio to file: ", ex);
+                Log.e(TAG, "Error writing audio to file: ", ex);
             }
         }
     }
@@ -146,7 +148,7 @@ public class AudioRecorder {
         if(null != mRecorder){
 
             synchronized (this) {
-                isRecording = false;
+                mIsRecording = false;
             }
 
             if(mRecorder.getState() == 1)
@@ -155,7 +157,7 @@ public class AudioRecorder {
             mRecorder.release();
 
             mRecorder = null;
-            recordingThread = null;
+            mRecordingThread = null;
         }
 
         postWaveFile(getTempFilename(), getFilename());
@@ -167,19 +169,20 @@ public class AudioRecorder {
 
         FileInputStream in = null;
         FileOutputStream out = null;
-        int channelNumber = 2;
+        int channelCount = 2;
         int audioLength = 0;
-        int dataLength = 36;
+        // Will always be at least 44 bytes long since that's how long the header is
+        int dataLength = 44;
 
-        byte[] data = new byte[audioBufferSize];
+        byte[] data = new byte[mAudioBufferSize];
 
         try {
             in = new FileInputStream(inFilename);
             out = new FileOutputStream(outFilename);
             audioLength = (int) in.getChannel().size();
-            dataLength = audioLength + 36;
+            dataLength = audioLength - 44;
 
-            byte[] header = makeWavHeader(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, channelNumber, dataLength);
+            byte[] header = makeWavHeader(SAMPLE_RATEInHz, CHANNEL_IN_MONO, channelCount, dataLength);
 
             out.write(header, 0, 44);
 
@@ -192,21 +195,21 @@ public class AudioRecorder {
 
             new PostSample(mContext).execute(outFilename);
 
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            Log.e(TAG, "Error writing audio: ", ex);
         }
     }
 
     // makeWaveHeader From AOSP
     // https://github.com/android/platform_frameworks_base/blob/master/core/java/android/speech/tts/FileSynthesisCallback.java
     // Apache License, Version 2.0
-    private byte[] makeWavHeader(int SAMPLE_RATEInHz, int audioFormat, int channelCount,
+    private byte[] makeWavHeader(int SAMPLE_RATEInHzInHz, int audioFormat, int channelCount,
                                  int dataLength) throws IOException {
 
         final int WAV_HEADER_LENGTH = 44;
 
         int sampleSizeInBytes = (audioFormat == AudioFormat.ENCODING_PCM_8BIT ? 1 : 2);
-        int byteRate = SAMPLE_RATEInHz * sampleSizeInBytes * channelCount;
+        int byteRate = SAMPLE_RATEInHzInHz * sampleSizeInBytes * channelCount;
         short blockAlign = (short) (sampleSizeInBytes * channelCount);
         short bitsPerSample = (short) (sampleSizeInBytes * 8);
 
@@ -221,9 +224,9 @@ public class AudioRecorder {
         header.put(new byte[]{ 'W', 'A', 'V', 'E' });
         header.put(new byte[]{ 'f', 'm', 't', ' ' });
         header.putInt(16);  // size of fmt chunk
-        header.putShort((short) WAV_FORMAT_PCM);
+        header.putShort((short) ENCODING_PCM_16BIT);
         header.putShort((short) channelCount);
-        header.putInt(SAMPLE_RATEInHz);
+        header.putInt(SAMPLE_RATEInHzInHz);
         header.putInt(byteRate);
         header.putShort(blockAlign);
         header.putShort(bitsPerSample);
