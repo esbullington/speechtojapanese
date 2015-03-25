@@ -1,4 +1,4 @@
-package com.ericbullington.speechtojapanese;
+package com.ericbullington.speechtojapanese.ui;
 
 
 import android.app.Activity;
@@ -11,11 +11,15 @@ import android.util.Log;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 
+import com.ericbullington.speechtojapanese.AudioRecorder;
+import com.ericbullington.speechtojapanese.R;
+import com.ericbullington.speechtojapanese.StepInterpolator;
 import com.ericbullington.speechtojapanese.ui.ColoredButton;
 
 public class MainActivity extends Activity {
     
-    private static final String TAG="MainActivity";
+    private final static String TAG="MainActivity";
+    public final static String EXTRA_MESSAGE = "com.ericbullington.speechtojapanese.MESSAGE";
 
     private boolean isButtonGreen = false;
     private AudioRecorder audioRecorder = null;

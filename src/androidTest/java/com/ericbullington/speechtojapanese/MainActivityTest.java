@@ -2,6 +2,8 @@ package com.ericbullington.speechtojapanese;
 
 import android.test.ActivityInstrumentationTestCase2;
 
+import com.ericbullington.speechtojapanese.ui.MainActivity;
+
 /**
  * This is a simple framework for a test of an Application.  See
  * {@link android.test.ApplicationTestCase ApplicationTestCase} for more information on

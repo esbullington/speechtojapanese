@@ -5,19 +5,40 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Header aligned to top -->
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/dark_grey"
-        android:text="@string/description"
-        android:textSize="25sp"/>
+        android:layout_alignParentTop="true"
+        android:orientation="vertical"
+        android:gravity="center" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:text="@string/long_app_name"
+            android:textColor="#000"
+            android:textSize="50sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/dark_grey"
+            android:text="@string/description"
+            android:textSize="35sp"/>
+    </LinearLayout>
+
 
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:id="@+id/down"
-        android:layout_marginBottom="80dp"
-        android:layout_alignParentBottom="true" >
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="200dp"
+    >
 
         <com.ericbullington.speechtojapanese.ui.ColoredButton
             android:id="@+id/btnStart"

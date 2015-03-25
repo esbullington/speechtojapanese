@@ -1,10 +1,13 @@
-package com.ericbullington.speechtojapanese;
+package com.ericbullington.speechtojapanese.ui;
 
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
+
+import com.ericbullington.speechtojapanese.R;
+import com.ericbullington.speechtojapanese.ui.MainActivity;
 
 
 public class TranslationActivity extends Activity {

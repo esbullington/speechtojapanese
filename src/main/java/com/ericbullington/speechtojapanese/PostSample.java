@@ -1,6 +1,5 @@
 package com.ericbullington.speechtojapanese;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.util.Base64;
@@ -18,18 +17,15 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.StringBuilder;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.ericbullington.speechtojapanese.ui.TranslationActivity;
 import com.github.kevinsawicki.http.HttpRequest;
-import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
 import com.google.gson.Gson;
 
 import org.json.JSONObject;

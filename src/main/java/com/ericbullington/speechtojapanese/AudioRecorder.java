@@ -24,7 +24,7 @@ public class AudioRecorder {
 
     private static final String TAG="AudioRecorder";
 
-    public final static String EXTRA_MESSAGE = "com.ericbullington.speechtojapanese.MESSAGE";
+
 
     private static final String FILE_EXTENSION = ".wav";
     private static final String FILE_DIRECTORY = "speechtojapanese";

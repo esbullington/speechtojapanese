@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Speech To Japanese</string>
-    <string name="description">Please the green button to record.  Press once again to stop and display translation.</string>
+    <string name="long_app_name">Speech To Japanese</string>
+    <string name="description">Please the green button to record.  Speak clearly the phrase you wish to translate.  Then press once again to stop and display translation.</string>
     <string name="title_activity_translation">Full Screen Display</string>
 </resources>
