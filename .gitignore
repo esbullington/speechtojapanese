@@ -31,4 +31,5 @@ proguard/
 *.log
 
 # Credentials
+credentials.properties
 src/main/assets/credentials.properties
