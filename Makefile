@@ -1,6 +1,9 @@
 APP_DIRECTORY=/home/eric/repos/SpeechToJapanese
 
 default:
+	make build
+
+all:
 	make build && make install
 
 build:
@@ -11,10 +14,10 @@ release:
 
 restart:
 	adb shell am force-stop com.ericbullington.speechtojapanese
-	adb shell am start -n com.ericbullington.speechtojapanese/com.ericbullington.speechtojapanese.MainActivity
+	adb shell am start -n com.ericbullington.speechtojapanese/com.ericbullington.speechtojapanese.ui.MainActivity
 
 run:
-	adb shell am start -n com.ericbullington.speechtojapanese/com.ericbullington.speechtojapanese.MainActivity
+	adb shell am start -n com.ericbullington.speechtojapanese/com.ericbullington.speechtojapanese.ui.MainActivity
 
 install:
 	adb install -r $(APP_DIRECTORY)/build/outputs/apk/SpeechToJapanese-debug.apk && make run
