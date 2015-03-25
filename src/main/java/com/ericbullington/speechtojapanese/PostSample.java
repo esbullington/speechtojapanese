@@ -85,10 +85,10 @@ public class PostSample extends AsyncTask<String, Long, String> {
     private void writeStream(InputStream inputstream, OutputStream outputstream)
             throws IOException
     {
-        byte abyte0[] = new byte[1024];
+        byte byteArray[] = new byte[BUFSIZE];
         int i;
-        while((i = inputstream.read(abyte0)) >= 0)
-            outputstream.write(abyte0, 0, i);
+        while((i = inputstream.read(byteArray)) >= 0)
+            outputstream.write(byteArray, 0, i);
         inputstream.close();
         outputstream.close();
     }
@@ -111,7 +111,7 @@ public class PostSample extends AsyncTask<String, Long, String> {
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 
             try {
-                byte[] basicCredentials = String.format("%s:%s", p.getProperty("username") , p.getProperty("password")).getBytes();
+                byte[] basicCredentials = String.format("%s:%s", p.getProperty("ibm_watson_username") , p.getProperty("ibm_watson_password")).getBytes();
                 String encoded = Base64.encodeToString(basicCredentials, Base64.NO_WRAP);
                 urlConnection.setRequestProperty("Authorization", "Basic "+encoded);
                 urlConnection.setRequestMethod("POST");
@@ -161,9 +161,6 @@ public class PostSample extends AsyncTask<String, Long, String> {
             Log.e(TAG, "Request exception", ex);
             return null;
         }
-//        try { Thread.sleep(3000);
-//        } catch (Exception ex) {}
-//        return "temp";
     }
 
     @Override
