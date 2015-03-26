@@ -7,7 +7,6 @@
 * [How It Works](#how-it-works)
   * [IBM Watson Services](#ibm-watson-services)
   * [Google Translate API](#google-translate-api)
-* [Installation](#installation)
 * [Building](#building)
   * [Android Studio](#android-studio)
   * [Command Line](#command-line)
@@ -18,17 +17,17 @@
 
 #### IBM Watson Services
 
-This app uses the speech-to-text API from IBM's Watson Services, which was recently released as a beta service.
+This app uses the speech-to-text API from [IBM's Watson Services](http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/services-catalog.html), which was recently released as a beta service.
 
 #### Google Translate API
 
 Once speech has been turned to text by the Watson speech-to-text service, it's sent to the well-known Google Translate API, which dynamically translates the text from English to Japanese.  However, I plan to soon switch over to a "home-grown" machine translation solution using the open source Moses SMT, with corpora specifically targeted to the subject area (short phrases relating to tourism and travel).  This would have the added benefit of being free-of-charge (Google now charges for use of its translation API).
 
-### Installation
-
-The app can be side loaded by downloading and installing the APK file from the [repo's releases page](https://github.com/esbullington/speechtojapanese/releases/tag/v0.1.0) or you may build and install the app yourself using the [instructions provided below](#building). You'll need to provide your own Google API and IBM Watson API keys, insert them in the appropriate places in the "template.properties" file under the `src/main/assets` directory, and rename the file to `credentials.properties`.
 
 ### Building
+
+You'll need to provide your own Google API and IBM Watson API keys, insert them in the appropriate places in the "template.properties" file under the `src/main/assets` directory, and rename the file to `credentials.properties`.
+
 
 #### Android Studio
 
