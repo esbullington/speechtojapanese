@@ -32,16 +32,18 @@ import org.json.JSONObject;
 
 public class PostSample extends AsyncTask<String, Long, String> {
 
-    public final static String EXTRA_MESSAGE = "com.ericbullington.speechtojapanese.MESSAGE";
-    private static int BUFSIZE = 1024;
-    private static String TAG = "PostSample";
-    private Context mContext;
-    private Properties p;
-    private ProgressDialog dialog;
+    private final static String EXTRA_MESSAGE = "com.ericbullington.speechtojapanese.MESSAGE";
+    private final static String TAG = "PostSample";
+    private final Context mContext;
+    private final Properties p;
+    private final ProgressDialog dialog;
 
     public PostSample(Context context) {
         this.mContext = context;
         dialog = new ProgressDialog(context);
+        PropertyReader pReader = new PropertyReader(this.mContext);
+        p = pReader.getProperties("credentials.properties");
+
     }
 
     protected void onPreExecute() {
@@ -52,17 +54,17 @@ public class PostSample extends AsyncTask<String, Long, String> {
 
     private String readInputStreamToString(HttpURLConnection connection) {
         String result = null;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder stringBuffer = new StringBuilder();
         InputStream is = null;
 
         try {
             is = new BufferedInputStream(connection.getInputStream());
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            String inputLine = "";
+            String inputLine;
             while ((inputLine = br.readLine()) != null) {
-                sb.append(inputLine);
+                stringBuffer.append(inputLine);
             }
-            result = sb.toString();
+            result = stringBuffer.toString();
         }
         catch (Exception e) {
             Log.d(TAG, "Error reading InputStream");
@@ -85,7 +87,8 @@ public class PostSample extends AsyncTask<String, Long, String> {
     private void writeStream(InputStream inputstream, OutputStream outputstream)
             throws IOException
     {
-        byte byteArray[] = new byte[BUFSIZE];
+        final int BUFFER_SIZE = 1024;
+        byte byteArray[] = new byte[BUFFER_SIZE];
         int i;
         while((i = inputstream.read(byteArray)) >= 0)
             outputstream.write(byteArray, 0, i);
@@ -98,9 +101,6 @@ public class PostSample extends AsyncTask<String, Long, String> {
         Log.i(TAG, "Requesting speech-to-text and translation...");
 
         try {
-
-            PropertyReader pReader = new PropertyReader(this.mContext);
-            p = pReader.getProperties("credentials.properties");
 
 
             String s = String.format("%s/v1/recognize", p.getProperty("url"));
