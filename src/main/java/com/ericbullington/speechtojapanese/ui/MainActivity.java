@@ -70,7 +70,6 @@ public class MainActivity extends Activity {
         deleteTempFiles(dir);
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private boolean deleteTempFiles(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();
